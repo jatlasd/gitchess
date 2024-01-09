@@ -1,4 +1,5 @@
-export function highlightAvailableSquares() {
+export function highlightAvailableSquares(availableSquares) {
+    let squares = document.querySelectorAll('.square');
     squares.forEach(square => {
         for(let i = 0; i<availableSquares.length; i++) {
             if(square.id === availableSquares[i]) {
