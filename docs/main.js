@@ -1,31 +1,59 @@
 import { populateBoard } from "./src/board/populateBoard.js";
 import { handlePawnMove } from "./src/pieces/pawn.js";
 import { handleRookMove } from "./src/pieces/rook.js";
+import { handleBishopMove } from "./src/pieces/bishop.js";
+import { handleKnightMove } from "./src/pieces/knight.js";
+import { handleKingMove, handleCastle } from "./src/pieces/king.js";
+import { handleQueenMove } from "./src/pieces/queen.js";
 
 populateBoard();
 
 let squares = document.querySelectorAll(".square");
 let colorToMove = "white";
+let availableSquares = [];
+let clickedPiece = {};
+let moveSquares = [];
+let castle = {
+  canCastle: false,
+  kingsideCastle: false,
+  queensideCastle: false,
+};
 
 squares.forEach((square) => {
   square.addEventListener("click", () => {
-    if (moveSquares.length == 0) {
-      moveSquares.push(square.dataset.color);
-    }
+    let selectedSquare = square.id;
     if (square.dataset.color == colorToMove) {
       if (square.dataset.occupied) {
-        assignClickedPiece(square);
-        handlePieceClick(event);
-        movePiece();
+        if (moveSquares.length == 0) {
+          assignClickedPiece(square);
+          handlePieceClick(event);
+          movePiece();
+        } else {
+          if (moveSquares[0] !== selectedSquare) {
+            clickedPiece = {};
+            availableSquares = [];
+            moveSquares = [];
+            removeSelectedSquares();
+            removeHighlightAvailableSquares();
+            clearCaptureClass();
+            assignClickedPiece(square);
+            handlePieceClick(event);
+            movePiece();
+          } else {
+            clickedPiece = {};
+            moveSquares = [];
+            removeSelectedSquares();
+            removeHighlightAvailableSquares();
+            if (square.dataset.move) {
+              square.dataset.move = "";
+            }
+            clearCaptureClass();
+          }
+        }
       }
     }
   });
 });
-
-// Important Variables
-let availableSquares = [];
-let clickedPiece = {};
-let moveSquares = [];
 
 // Universal Functions
 function assignClickedPiece(square) {
@@ -41,20 +69,6 @@ function assignClickedPiece(square) {
 }
 
 //! highlights.js
-
-function highlightAvailableSquares() {
-  squares.forEach((square) => {
-    for (let i = 0; i < availableSquares.length; i++) {
-      if (square.id === availableSquares[i]) {
-        if (!square.dataset.occupied) {
-          square.classList.contains("odd")
-            ? square.classList.add("black-available")
-            : square.classList.add("white-available");
-        }
-      }
-    }
-  });
-}
 
 function removeHighlightAvailableSquares() {
   availableSquares = [];
@@ -74,36 +88,22 @@ function removeHighlightAvailableSquares() {
 
 function handlePieceClick(e) {
   const square = e.target;
-  const isSelectedBlack = square.classList.contains("selected-black");
-  const isSelectedWhite = square.classList.contains("selected-white");
   const isOdd = square.classList.contains("odd");
-
-  if (!isSelectedBlack && !isSelectedWhite) {
-    square.classList.add(isOdd ? "selected-black" : "selected-white");
-    moveSquares.push(square.id);
-    switch (square.dataset.piece) {
-      case "pawn":
-        return handlePawnMove(squares, clickedPiece, availableSquares);
-      case "rook":
-        return handleRookMove(squares, clickedPiece, availableSquares);
-      case "knight":
-        return handleKnightMove();
-      case "bishop":
-        return handleBishopMove();
-      case "king":
-        return handleKingMove();
-      case "queen":
-        return handleQueenMove();
-    }
-  } else if (isSelectedBlack || isSelectedWhite) {
-    clickedPiece = {};
-    moveSquares = [];
-    removeSelectedSquares();
-    removeHighlightAvailableSquares();
-    if (square.dataset.move) {
-      square.dataset.move = "";
-    }
-    clearCaptureClass();
+  square.classList.add(isOdd ? "selected-black" : "selected-white");
+  moveSquares.push(square.id);
+  switch (square.dataset.piece) {
+    case "pawn":
+      return handlePawnMove(squares, clickedPiece, availableSquares);
+    case "rook":
+      return handleRookMove(squares, clickedPiece, availableSquares);
+    case "knight":
+      return handleKnightMove(squares, clickedPiece, availableSquares);
+    case "bishop":
+      return handleBishopMove(squares, clickedPiece, availableSquares);
+    case "king":
+      return handleKingMove(squares, clickedPiece, availableSquares, castle);
+    case "queen":
+      return handleQueenMove(squares, clickedPiece, availableSquares);
   }
 }
 // Universal Piece Movement
@@ -124,6 +124,9 @@ function handleClick(e) {
     square.classList.contains("capture-black")
   ) {
     colorToMove = whiteToMove ? "black" : "white";
+    if (castle.canCastle) {
+      handleCastle(squares, castle, clickedPiece);
+    }
     clearCaptureClass();
     removeMoveSquares();
     setNewSquare(square);
@@ -165,9 +168,7 @@ function setNewSquare(square) {
   square.dataset.move = true;
   square.dataset.color = clickedPiece.color;
   square.dataset.piece = clickedPiece.piece;
-  if (clickedPiece.piece == "pawn") {
-    square.dataset.hasMoved = true;
-  }
+  square.dataset.hasMoved = true;
   square.dataset.occupied = true;
   square.style.setProperty(
     "background-image",
@@ -176,19 +177,16 @@ function setNewSquare(square) {
 }
 
 function clearOldSquare() {
-  squares.forEach((square) => {
-    if (square.id == moveSquares[1]) {
-      const isOdd = square.classList.contains("odd");
-      square.classList.remove(clickedPiece.color, clickedPiece.piece);
-      square.dataset.move = true;
-      square.dataset.color = "";
-      square.dataset.piece = "";
-      square.dataset.occupied = "";
-      square.style.setProperty("background-image", "");
-      setMoveSquares();
-      square.classList.remove(isOdd ? "selected-black" : "selected-white");
-    }
-  });
+  let oldSquare = document.getElementById(moveSquares[0]);
+  const isOdd = oldSquare.classList.contains("odd");
+  oldSquare.classList.remove(clickedPiece.color, clickedPiece.piece);
+  oldSquare.dataset.move = true;
+  oldSquare.dataset.color = "";
+  oldSquare.dataset.piece = "";
+  oldSquare.dataset.occupied = "";
+  oldSquare.style.setProperty("background-image", "");
+  setMoveSquares();
+  oldSquare.classList.remove(isOdd ? "selected-black" : "selected-white");
 }
 
 // Individual Piece Movements and Captures
@@ -200,19 +198,3 @@ function clearCaptureClass() {
   });
   setMoveSquares();
 }
-
-//! Bishop
-
-function handleBishopMove() {}
-
-//! Knight
-
-function handleKnightMove() {}
-
-//! Queen
-
-function handleQueenMove() {}
-
-//! King
-
-function handleKingMove() {}

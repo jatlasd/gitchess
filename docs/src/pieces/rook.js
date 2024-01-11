@@ -27,7 +27,7 @@ function allRookMoves(squares, clickedPiece) {
   });
 }
 
-function filterPieceMoves(clickedPiece) {
+function filterRookMoves(clickedPiece) {
   movesUp = [];
   movesDown = [];
   movesLeft = [];
@@ -55,7 +55,7 @@ function filterPieceMoves(clickedPiece) {
   }
 }
 
-function findPieceCaptures(squares, clickedPiece, clickedFile, clickedRow) {
+function findRookCaptures(squares, clickedPiece, clickedFile, clickedRow) {
   squares.forEach((square) => {
     const isOdd = square.dataset.squareColor == "odd";
     let splitId = square.id.split("");
@@ -85,7 +85,7 @@ function findPieceCaptures(squares, clickedPiece, clickedFile, clickedRow) {
 
 export function handleRookMove(squares, clickedPiece, availableSquares) {
   allRookMoves(squares, clickedPiece);
-  filterPieceMoves(clickedPiece);
+  filterRookMoves(clickedPiece);
   blocked.up = Math.min(...movesUp);
   blocked.down = Math.max(...movesDown);
   blocked.left = Math.max(...movesLeft);
@@ -112,6 +112,6 @@ export function handleRookMove(squares, clickedPiece, availableSquares) {
       }
     }
   });
-  findPieceCaptures(squares, clickedPiece, clickedFile, clickedRow);
+  findRookCaptures(squares, clickedPiece, clickedFile, clickedRow);
   highlightAvailableSquares(availableSquares);
 }

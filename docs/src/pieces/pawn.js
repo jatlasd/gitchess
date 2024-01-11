@@ -5,27 +5,25 @@ export function handlePawnMove(squares, clickedPiece, availableSquares) {
     const [file, row] = square.id;
     const newRow = parseInt(row);
 
-    if (clickedPiece.piece === "pawn") {
-      checkPawnCapture(square, clickedPiece);
-      const moveDirection = clickedPiece.color === "white" ? 1 : -1;
+    checkPawnCapture(square, clickedPiece);
+    const moveDirection = clickedPiece.color === "white" ? 1 : -1;
 
-      if (
-        !clickedPiece.hasMoved &&
-        (newRow === clickedPiece.row + moveDirection ||
-          newRow === clickedPiece.row + 2 * moveDirection)
-      ) {
-        if (file === clickedPiece.file) {
-          availableSquares.push(`${file}${newRow}`);
-          highlightAvailableSquares(availableSquares);
-        }
-      } else if (
-        clickedPiece.hasMoved &&
-        newRow === clickedPiece.row + moveDirection
-      ) {
-        if (file === clickedPiece.file) {
-          availableSquares.push(`${file}${newRow}`);
-          highlightAvailableSquares(availableSquares);
-        }
+    if (
+      !clickedPiece.hasMoved &&
+      (newRow === clickedPiece.row + moveDirection ||
+        newRow === clickedPiece.row + 2 * moveDirection)
+    ) {
+      if (file === clickedPiece.file) {
+        availableSquares.push(`${file}${newRow}`);
+        highlightAvailableSquares(availableSquares);
+      }
+    } else if (
+      clickedPiece.hasMoved &&
+      newRow === clickedPiece.row + moveDirection
+    ) {
+      if (file === clickedPiece.file) {
+        availableSquares.push(`${file}${newRow}`);
+        highlightAvailableSquares(availableSquares);
       }
     }
   });
@@ -43,25 +41,15 @@ function checkPawnCapture(square, clickedPiece) {
   if (clickedPiece.color == "white") {
     if (isCaptureLeftWhite || isCaptureRightWhite) {
       if (square.dataset.piece && square.dataset.color !== clickedPiece.color) {
-        if (isBlack) {
-          square.classList.remove("black-to");
-          square.classList.add("capture-black");
-        } else {
-          square.classList.remove("white-to");
-          square.classList.add("capture-white");
-        }
+        square.classList.remove(isBlack ? 'black-to' : 'white-to')
+        square.classList.add(isBlack ? 'capture-black' : 'capture-white')
       }
     }
   } else if (clickedPiece.color == "black") {
     if (isCaptureLeftBlack || isCaptureRightBlack) {
       if (square.dataset.piece && square.dataset.color !== clickedPiece.color) {
-        if (isBlack) {
-          square.classList.remove("black-to");
-          square.classList.add("capture-black");
-        } else {
-          square.classList.remove("white-to");
-          square.classList.add("capture-white");
-        }
+        square.classList.remove(isBlack ? 'black-to' : 'white-to')
+        square.classList.add(isBlack ? 'capture-black' : 'capture-white')
       }
     }
   }
