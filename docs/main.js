@@ -1,12 +1,23 @@
 import { populateBoard } from "./src/board/populateBoard.js";
-import { handlePawnMove } from "./src/pieces/pawn.js";
+import { handlePawnMove, handlePawnPromotion } from "./src/pieces/pawn.js";
 import { handleRookMove } from "./src/pieces/rook.js";
 import { handleBishopMove } from "./src/pieces/bishop.js";
 import { handleKnightMove } from "./src/pieces/knight.js";
 import { handleKingMove, handleCastle } from "./src/pieces/king.js";
 import { handleQueenMove } from "./src/pieces/queen.js";
+import { highlightAvailableSquares } from "./src/squareChanges/availableSquares.js";
 
 populateBoard();
+
+/* 
+
+To Do:
+  - checks
+    - detect when check is present
+    - only allow moves that block check or capture checking piece
+    - disallow moves which put king in check
+
+*/
 
 let squares = document.querySelectorAll(".square");
 let colorToMove = "white";
@@ -18,6 +29,10 @@ let castle = {
   kingsideCastle: false,
   queensideCastle: false,
 };
+
+
+
+
 
 squares.forEach((square) => {
   square.addEventListener("click", () => {
@@ -164,6 +179,7 @@ function removeMoveSquares() {
 }
 
 function setNewSquare(square) {
+  showCapturedPiece(square);
   square.classList.add(clickedPiece.color, clickedPiece.piece);
   square.dataset.move = true;
   square.dataset.color = clickedPiece.color;
@@ -174,6 +190,24 @@ function setNewSquare(square) {
     "background-image",
     `url(assets/${clickedPiece.color}-${clickedPiece.piece}.png)`
   );
+  if(square.dataset.piece == 'pawn') {
+    handlePawnPromotion(square, clickedPiece)
+  }
+}
+
+function showCapturedPiece(square) {
+  const isWhite = square.dataset.color == "white";
+  let capturedPieceSquare = document.createElement("div");
+  capturedPieceSquare.className = "capturedPieceSquare";
+  capturedPieceSquare.style.setProperty(
+    "background-image",
+    `url(assets/${square.dataset.color}-${square.dataset.piece}.png)`
+  );
+  if (square.dataset.occupied) {
+    document
+      .getElementById(isWhite ? "black-captures" : "white-captures")
+      .appendChild(capturedPieceSquare);
+  }
 }
 
 function clearOldSquare() {
@@ -198,3 +232,5 @@ function clearCaptureClass() {
   });
   setMoveSquares();
 }
+
+

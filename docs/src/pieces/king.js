@@ -35,112 +35,60 @@ function filterKingMoves(clickedPiece, availableSquares) {
   }
 }
 
+
 function checkCastle(clickedPiece, availableSquares, castle) {
   let isWhite = clickedPiece.color == "white";
-
-  let whiteCastle = [
-    ["b1", "c1", "d1"],
-    ["f1", "g1"],
-  ];
-
-  let blackCastle = [
-    ["b8", "c8", "d8"],
-    ["f8", "g8"],
-  ];
+  let castleSquares = isWhite ? [["b1", "c1", "d1"], ["f1", "g1"]] : [["b8", "c8", "d8"], ["f8", "g8"]];
+  let rookPositions = isWhite ? ["a1", "h1"] : ["a8", "h8"];
+  let castlePositions = isWhite ? ["c1", "g1"] : ["c8", "g8"];
 
   if (!clickedPiece.hasMoved) {
-    if (isWhite) {
-      if (checkCastleSquares(whiteCastle)[0]) {
-        if (!document.getElementById("a1").dataset.hasMoved) {
+    castleSquares.forEach((squares, index) => {
+      if (checkCastleSquares(squares)) {
+        if (!document.getElementById(rookPositions[index]).dataset.hasMoved) {
           castle.canCastle = true;
-          castle.queensideCastle = true;
-          availableSquares.push("c1");
+          castle.queensideCastle = index === 0;
+          castle.kingsideCastle = index === 1;
+          availableSquares.push(castlePositions[index]);
         }
       }
-      if (checkCastleSquares(whiteCastle)[1]) {
-        if (!document.getElementById("h1").dataset.hasMoved) {
-          castle.canCastle = true;
-          castle.kingsideCastle = true;
-          availableSquares.push("g1");
-        }
-      }
-    } else if (!isWhite) {
-      if (checkCastleSquares(blackCastle)[0]) {
-        if (!document.getElementById("a8").dataset.hasMoved) {
-          castle.canCastle = true;
-          castle.queensideCastle = true;
-          availableSquares.push("c8");
-        }
-      }
-      if (checkCastleSquares(blackCastle)[1]) {
-        if (!document.getElementById("h8").dataset.hasMoved) {
-          castle.canCastle = true;
-          castle.kingsideCastle = true;
-          availableSquares.push("g8");
-        }
-      }
-    }
+    });
   }
 }
 
-function checkCastleSquares(colorCastle) {
-  return colorCastle.map((row) =>
-    row.every((squareId) => {
-      const square = document.getElementById(squareId);
-      return square && !square.dataset.occupied;
-    })
-  );
+function checkCastleSquares(squares) {
+  return squares.every((squareId) => {
+    const square = document.getElementById(squareId);
+    return square && !square.dataset.occupied;
+  });
 }
 
 export function handleCastle(squares, castle, clickedPiece) {
   squares.forEach((square) => {
     let splitId = square.id.split("");
     let row = parseInt(splitId[1]);
-    if (castle.kingsideCastle) {
-      if (square.dataset.color == clickedPiece.color)
-        if (square.dataset.piece == "rook" && splitId[0] == "h") {
-          let newId = "f" + row;
-          let newSquare = document.getElementById(newId);
-          square.classList.remove(clickedPiece.color, clickedPiece.piece);
-          square.dataset.move = true;
-          square.dataset.color = "";
-          square.dataset.piece = "";
-          square.dataset.occupied = "";
-          square.style.setProperty("background-image", "");
-          newSquare.classList.add(clickedPiece.color, "rook");
-          newSquare.dataset.move = true;
-          newSquare.dataset.color = clickedPiece.color;
-          newSquare.dataset.piece = "rook";
-          newSquare.dataset.hasMoved = true;
-          newSquare.dataset.occupied = true;
-          newSquare.style.setProperty(
-            "background-image",
-            `url(assets/${clickedPiece.color}-rook.png)`
-          );
-        }
-    } else if (castle.queensideCastle) {
-      if (square.dataset.color == clickedPiece.color) {
-        if (square.dataset.piece == "rook" && splitId[0] == "a") {
-          let newId = "d" + row;
-          let newSquare = document.getElementById(newId);
-          square.classList.remove(clickedPiece.color, clickedPiece.piece);
-          square.dataset.move = true;
-          square.dataset.color = "";
-          square.dataset.piece = "";
-          square.dataset.occupied = "";
-          square.style.setProperty("background-image", "");
-          newSquare.classList.add(clickedPiece.color, "rook");
-          newSquare.dataset.move = true;
-          newSquare.dataset.color = clickedPiece.color;
-          newSquare.dataset.piece = "rook";
-          newSquare.dataset.hasMoved = true;
-          newSquare.dataset.occupied = true;
-          newSquare.style.setProperty(
-            "background-image",
-            `url(assets/${clickedPiece.color}-rook.png)`
-          );
-        }
-      }
+    let isKingside = castle.kingsideCastle;
+    let rookPosition = isKingside ? "h" : "a";
+    let newId = (isKingside ? "f" : "d") + row;
+
+    if (square.dataset.color == clickedPiece.color && square.dataset.piece == "rook" && splitId[0] == rookPosition) {
+      let newSquare = document.getElementById(newId);
+      square.classList.remove(clickedPiece.color, clickedPiece.piece);
+      square.dataset.move = true;
+      square.dataset.color = "";
+      square.dataset.piece = "";
+      square.dataset.occupied = "";
+      square.style.setProperty("background-image", "");
+      newSquare.classList.add(clickedPiece.color, "rook");
+      newSquare.dataset.move = true;
+      newSquare.dataset.color = clickedPiece.color;
+      newSquare.dataset.piece = "rook";
+      newSquare.dataset.hasMoved = true;
+      newSquare.dataset.occupied = true;
+      newSquare.style.setProperty(
+        "background-image",
+        `url(assets/${clickedPiece.color}-rook.png)`
+      );
     }
   });
   castle.kingsideCastle = false;

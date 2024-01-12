@@ -2,6 +2,8 @@ import { highlightAvailableSquares } from "../squareChanges/availableSquares.js"
 
 let queenMoves = [];
 
+let captureSquares = [];
+
 let separatedMoves = {
   up: [],
   down: [],
@@ -46,6 +48,7 @@ function allQueenMoves(squares, clickedPiece) {
       queenMoves.push(square.id);
     }
   });
+  return queenMoves;
 }
 
 function findAvailableBishoplikeMoves(
@@ -175,56 +178,100 @@ function filterQueenMoves(clickedPiece) {
 }
 
 function findQueenCaptures(blocked, squares, clickedPiece) {
+  captureSquares = [];
   let clickedFile = clickedPiece.file.charCodeAt(0);
   let clickedRow = clickedPiece.row;
+
+  let closestPieces = {
+    up: null,
+    down: null,
+    left: null,
+    right: null,
+    upLeft: null,
+    upRight: null,
+    downLeft: null,
+    downRight: null,
+  };
+
   squares.forEach((square) => {
-    const isOdd = square.dataset.squareColor == "odd";
     let splitId = square.id.split("");
     let file = splitId[0].charCodeAt(0);
     let row = parseInt(splitId[1]);
+
     if (queenMoves.includes(square.id)) {
-      if (
-        square.dataset.occupied &&
-        square.dataset.color !== clickedPiece.color
-      ) {
+      if (square.dataset.occupied) {
+        let direction;
         if (file == clickedFile) {
-          if (row == blocked.up || row == blocked.down) {
-            square.classList.add(isOdd ? "capture-black" : "capture-white");
-            square.classList.remove(isOdd ? "black-to" : "white-to");
-          }
+          direction = row > clickedRow ? "up" : "down";
         } else if (row == clickedRow) {
-          if (file == blocked.right || file == blocked.left) {
-            square.classList.add(isOdd ? "capture-black" : "capture-white");
-            square.classList.remove(isOdd ? "black-to" : "white-to");
-          }
+          direction = file > clickedFile ? "right" : "left";
         } else if (row > clickedRow) {
-          if (row == blocked.upRight || row == blocked.upLeft) {
-            square.classList.add(isOdd ? "capture-black" : "capture-white");
-            square.classList.remove(isOdd ? "black-to" : "white-to");
-          }
+          direction = file > clickedFile ? "upRight" : "upLeft";
         } else if (row < clickedRow) {
-          if (row == blocked.downRight || row == blocked.downLeft) {
-            square.classList.add(isOdd ? "capture-black" : "capture-white");
-            square.classList.remove(isOdd ? "black-to" : "white-to");
-          }
+          direction = file > clickedFile ? "downRight" : "downLeft";
+        }
+
+        if (
+          !closestPieces[direction] ||
+          (["up", "down"].includes(direction) &&
+            Math.abs(row - clickedRow) <
+              Math.abs(closestPieces[direction].row - clickedRow)) ||
+          (["left", "right"].includes(direction) &&
+            Math.abs(file - clickedFile) <
+              Math.abs(closestPieces[direction].file - clickedFile)) ||
+          (["upLeft", "upRight", "downLeft", "downRight"].includes(direction) &&
+            Math.abs(file - clickedFile) + Math.abs(row - clickedRow) <
+              Math.abs(closestPieces[direction].file - clickedFile) +
+                Math.abs(closestPieces[direction].row - clickedRow))
+        ) {
+          closestPieces[direction] = { square, row, file };
         }
       }
     }
   });
+
+  for (let direction in closestPieces) {
+    let piece = closestPieces[direction];
+    if (piece && piece.square.dataset.color !== clickedPiece.color) {
+      let isOdd = piece.square.dataset.squareColor == "odd";
+      captureSquares.push(piece.square.id);
+      piece.square.classList.add(isOdd ? "capture-black" : "capture-white");
+      piece.square.classList.remove(isOdd ? "black-to" : "white-to");
+    }
+  }
 }
 
-export function handleQueenMove(squares, clickedPiece, availableSquares) {
-  allQueenMoves(squares, clickedPiece);
+export function handleQueenMove(
+  squares,
+  clickedPiece,
+  availableSquares,
+  checkSquares
+) {
+  queenMoves = allQueenMoves(squares, clickedPiece);
+
+  separatedMoves = {
+    up: [],
+    down: [],
+    left: [],
+    right: [],
+    upLeft: [],
+    upRight: [],
+    downLeft: [],
+    downRight: [],
+  };
+
   filterQueenMoves(clickedPiece);
 
-  blocked.upLeft = Math.min(...separatedMoves.upLeft);
-  blocked.upRight = Math.min(...separatedMoves.upRight);
-  blocked.downLeft = Math.max(...separatedMoves.downLeft);
-  blocked.downRight = Math.max(...separatedMoves.downRight);
-  blocked.up = Math.min(...separatedMoves.up);
-  blocked.down = Math.max(...separatedMoves.down);
-  blocked.left = Math.max(...separatedMoves.left);
-  blocked.right = Math.min(...separatedMoves.right);
+  blocked = {
+    up: Math.min(...separatedMoves.up),
+    down: Math.max(...separatedMoves.down),
+    left: Math.max(...separatedMoves.left),
+    right: Math.min(...separatedMoves.right),
+    upLeft: Math.min(...separatedMoves.upLeft),
+    upRight: Math.min(...separatedMoves.upRight),
+    downLeft: Math.max(...separatedMoves.downLeft),
+    downRight: Math.max(...separatedMoves.downRight),
+  };
 
   findAvailableBishoplikeMoves(
     blocked,
