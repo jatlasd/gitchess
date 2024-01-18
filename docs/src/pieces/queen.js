@@ -1,4 +1,6 @@
 import { highlightAvailableSquares } from "../squareChanges/availableSquares.js";
+import { hypoBlockingMoves, hypotheticalCheck } from "../boardState/hypotheticalCheck.js";
+
 
 let queenMoves = [];
 
@@ -55,10 +57,25 @@ function findAvailableBishoplikeMoves(
   blocked,
   squares,
   clickedPiece,
-  availableSquares
+  availableSquares,
+  colorToMove,
+  isCheck,
+  blockingMoves
 ) {
+  const isWhite = clickedPiece.color == "white";
+  let isCheckColor = isWhite ? isCheck.white : isCheck.black;
   let clickedFile = clickedPiece.file.charCodeAt(0);
   let clickedRow = clickedPiece.row;
+
+  if (blockingMoves.includes(clickedPiece.square)) {
+    return;
+  }
+
+  blockingMoves.forEach(move => {
+    if (document.getElementById(move).dataset.occupied) {
+      isCheckColor = false;
+    }
+  });
 
   squares.forEach((square) => {
     let splitId = square.id.split("");
@@ -68,45 +85,72 @@ function findAvailableBishoplikeMoves(
     if (queenMoves.includes(square.id)) {
       if (file > clickedFile) {
         if (row > blocked.downRight && clickedRow > row) {
-          availableSquares.push(square.id);
+          if (!isCheckColor || blockingMoves.includes(square.id)) {
+            if(!hypotheticalCheck || (hypotheticalCheck && hypoBlockingMoves.includes(square.id))) {
+              availableSquares.push(square.id);
+            }            
+          }
         } else if (row < blocked.upRight && clickedRow < row) {
-          availableSquares.push(square.id);
+          if (!isCheckColor || blockingMoves.includes(square.id)) {
+            if(!hypotheticalCheck || (hypotheticalCheck && hypoBlockingMoves.includes(square.id))) {
+              availableSquares.push(square.id);
+            }           
+          }
         }
       } else if (file < clickedFile) {
         if (row < blocked.upLeft && clickedRow < row) {
-          availableSquares.push(square.id);
+          if (!isCheckColor || blockingMoves.includes(square.id)) {
+            if(!hypotheticalCheck || (hypotheticalCheck && hypoBlockingMoves.includes(square.id))) {
+              availableSquares.push(square.id);
+            }         
+          }
         } else if (row > blocked.downLeft && clickedRow > row) {
-          availableSquares.push(square.id);
+          if (!isCheckColor || blockingMoves.includes(square.id)) {
+            if(!hypotheticalCheck || (hypotheticalCheck && hypoBlockingMoves.includes(square.id))) {
+              availableSquares.push(square.id);
+            }            
+          }
         }
       }
     }
   });
 }
-
-function findAvailableRooklikeMoves(
-  blocked,
-  squares,
-  availableSquares,
-  clickedPiece
-) {
+function findAvailableRooklikeMoves(blocked, squares, availableSquares, colorToMove, clickedPiece, isCheck, blockingMoves) {
+  const isWhite = clickedPiece.color == "white";
+  let isCheckColor = isWhite ? isCheck.white : isCheck.black;
   let clickedFile = clickedPiece.file.charCodeAt(0);
   let clickedRow = clickedPiece.row;
+
+  if (blockingMoves.includes(clickedPiece.square)) {
+    return;
+  }
+
+  blockingMoves.forEach(move => {
+    if (document.getElementById(move).dataset.occupied) {
+      isCheckColor = false;
+    }
+  });
 
   squares.forEach((square) => {
     let splitId = square.id.split("");
     let file = splitId[0].charCodeAt(0);
     let row = parseInt(splitId[1]);
+
     if (file == clickedFile) {
-      if (row < blocked.up && clickedRow < row) {
-        availableSquares.push(square.id);
-      } else if (row > blocked.down && clickedRow > row) {
-        availableSquares.push(square.id);
+      if ((row < blocked.up && clickedRow < row) || (row > blocked.down && clickedRow > row)) {
+        if (!isCheckColor || blockingMoves.includes(square.id)) {
+          if(!hypotheticalCheck || (hypotheticalCheck && hypoBlockingMoves.includes(square.id))) {
+            availableSquares.push(square.id);
+          }           
+        } 
       }
     } else if (row == clickedRow) {
-      if (file > blocked.left && file < clickedFile) {
-        availableSquares.push(square.id);
-      } else if (file < blocked.right && file > clickedFile) {
-        availableSquares.push(square.id);
+      if ((file > blocked.left && file < clickedFile) || (file < blocked.right && file > clickedFile)) {
+        if (!isCheckColor || blockingMoves.includes(square.id)) {
+        if(!hypotheticalCheck || (hypotheticalCheck && hypoBlockingMoves.includes(square.id))) {
+          availableSquares.push(square.id);
+        }         
+        }
       }
     }
   });
@@ -234,9 +278,13 @@ function findQueenCaptures(blocked, squares, clickedPiece) {
     let piece = closestPieces[direction];
     if (piece && piece.square.dataset.color !== clickedPiece.color) {
       let isOdd = piece.square.dataset.squareColor == "odd";
-      captureSquares.push(piece.square.id);
-      piece.square.classList.add(isOdd ? "capture-black" : "capture-white");
-      piece.square.classList.remove(isOdd ? "black-to" : "white-to");
+      if (
+        !hypotheticalCheck ||
+        (hypotheticalCheck && hypoBlockingMoves.includes(piece.square.id))
+      ) {
+        piece.square.classList.add(isOdd ? "capture-black" : "capture-white");
+        piece.square.classList.remove(isOdd ? "black-to" : "white-to");
+      }
     }
   }
 }
@@ -245,7 +293,10 @@ export function handleQueenMove(
   squares,
   clickedPiece,
   availableSquares,
-  checkSquares
+  colorToMove,
+  isCheck,
+  blockingMoves,
+  hypotheticalMoves
 ) {
   queenMoves = allQueenMoves(squares, clickedPiece);
 
@@ -277,9 +328,13 @@ export function handleQueenMove(
     blocked,
     squares,
     clickedPiece,
-    availableSquares
+    availableSquares,
+    colorToMove,
+    isCheck,
+    blockingMoves,
+    hypotheticalMoves
   );
-  findAvailableRooklikeMoves(blocked, squares, availableSquares, clickedPiece);
+  findAvailableRooklikeMoves(blocked, squares, availableSquares, colorToMove, clickedPiece, isCheck, blockingMoves, hypotheticalMoves);
   findQueenCaptures(blocked, squares, clickedPiece);
 
   highlightAvailableSquares(availableSquares);

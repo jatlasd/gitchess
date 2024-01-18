@@ -1,4 +1,6 @@
 import { highlightAvailableSquares } from "../squareChanges/availableSquares.js";
+import { hypotheticalCheck, hypoBlockingMoves } from "../boardState/hypotheticalCheck.js";
+
 
 let pawnMoves;
 let blockedSquares;
@@ -41,14 +43,14 @@ function findPawnBlock(clickedPiece) {
       blockedSquares.push(row);
     }
   }
-  if (isWhite) {
-    blocked = Math.min(...blockedSquares);
+  if (blockedSquares.length === 0) {
+    blocked = isWhite ? 9 : 0;
   } else {
-    blocked = Math.max(...blockedSquares);
+    blocked = isWhite ? Math.min(...blockedSquares) : Math.max(...blockedSquares);
   }
 }
 
-export function findPawnCaptures(squares, clickedPiece) {
+function findPawnCaptures(squares, clickedPiece) {
   const isWhite = clickedPiece.color == "white";
   const clickedFile = clickedPiece.file.charCodeAt(0);
   const clickedRow = clickedPiece.row;
@@ -58,13 +60,15 @@ export function findPawnCaptures(squares, clickedPiece) {
     let file = split[0].charCodeAt(0);
     let row = parseInt(split[1]);
     if (file == clickedFile + 1 || file == clickedFile - 1) {
-      if (
-        square.dataset.color !== clickedPiece.color &&
-        square.dataset.occupied
-      ) {
+      if (square.dataset.color !== clickedPiece.color && square.dataset.occupied) {
         if (row == (isWhite ? clickedRow + 1 : clickedRow - 1)) {
-          square.classList.add(isOdd ? "capture-black" : "capture-white");
-          square.classList.remove(isOdd ? "black-to" : "white-to");
+          if (
+            !hypotheticalCheck ||
+            (hypotheticalCheck && hypoBlockingMoves.includes(square.id))
+          ) {
+            square.classList.add(isOdd ? "capture-black" : "capture-white");
+            square.classList.remove(isOdd ? "black-to" : "white-to");
+          }
         }
       }
     }
@@ -112,25 +116,49 @@ function setPiece(promoteSquare, select) {
   });
 }
 
-export function handlePawnMove(squares, clickedPiece, availableSquares) {
+
+export function handlePawnMove(squares, clickedPiece, availableSquares, colorToMove, isCheck, blockingMoves) {
   const isWhite = clickedPiece.color == "white";
+  let isCheckColor = isWhite ? isCheck.white : isCheck.black;
   const clickedFile = clickedPiece.file.charCodeAt(0);
   const clickedRow = clickedPiece.row;
   allPawnMoves(squares, clickedPiece);
   findPawnBlock(clickedPiece);
+
+  // If any of the moves in blockingMoves are occupied, set the corresponding isCheck to false
+  if (blockingMoves.includes(clickedPiece.square)) {
+    return;
+  }
+  blockingMoves.forEach(move => {
+    if (document.getElementById(move).dataset.occupied) {
+      isCheckColor = false;
+    }
+  });
+
+
   squares.forEach((square) => {
     let split = square.id.split("");
     let file = split[0].charCodeAt(0);
     let row = parseInt(split[1]);
     if (pawnMoves.includes(square.id)) {
       if (file == clickedFile) {
-        if (isWhite) {
-          if (row < blocked && row > clickedRow) {
-            availableSquares.push(square.id);
+        if (isWhite && row <= blocked && row > clickedRow) {
+          if (!isCheckColor || blockingMoves.includes(square.id)) {
+            if (
+              !hypotheticalCheck ||
+              (hypotheticalCheck && hypoBlockingMoves.includes(square.id))
+            ) {
+              availableSquares.push(square.id);
+            }
           }
-        } else {
-          if (row > blocked && row < clickedRow) {
-            availableSquares.push(square.id);
+        } else if (!isWhite && row >= blocked && row < clickedRow) {
+          if (!isCheckColor || blockingMoves.includes(square.id)) {
+            if (
+              !hypotheticalCheck ||
+              (hypotheticalCheck && hypoBlockingMoves.includes(square.id))
+            ) {
+              availableSquares.push(square.id);
+            }         
           }
         }
       }

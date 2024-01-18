@@ -14,9 +14,15 @@ export function populateBoard() {
         if(color) {
             square.classList.add(color, pieceType)
             square.dataset.color = color
+            square.dataset.square = square.id
             square.dataset.piece = pieceType
             square.dataset.occupied = true
             square.style.setProperty('background-image', `url(assets/${color}-${pieceType}.png)`)
+            if(pieceType == 'pawn' || pieceType == 'knight' || pieceType == 'rook') {
+                square.dataset.pieceIdentifier = file+pieceType
+            } else if (pieceType == 'bishop') {
+                square.dataset.pieceIdentifier = isEven ? 'whitebishop' : 'blackbishop'
+            }
         }
     }
   }

@@ -1,4 +1,6 @@
 import { highlightAvailableSquares } from "../squareChanges/availableSquares.js";
+import { hypotheticalCheck, hypoBlockingMoves } from "../boardState/hypotheticalCheck.js";
+
 
 let bishopMoves;
 
@@ -68,19 +70,30 @@ function findBishopCaptures(squares, clickedPiece) {
       if (square.dataset.occupied) {
         if (square.dataset.color !== clickedPiece.color) {
           if (row == blocked.downRight || row == blocked.upRight) {
-            square.classList.add(isOdd ? "capture-black" : "capture-white");
-            square.classList.remove(isOdd ? "black-to" : "white-to");
+            if (
+              !hypotheticalCheck ||
+              (hypotheticalCheck && hypoBlockingMoves.includes(square.id))
+            ) {
+              square.classList.add(isOdd ? "capture-black" : "capture-white");
+              square.classList.remove(isOdd ? "black-to" : "white-to");
+            }
           } else if (row == blocked.upLeft || row == blocked.downLeft) {
-            square.classList.add(isOdd ? "capture-black" : "capture-white");
-            square.classList.remove(isOdd ? "black-to" : "white-to");
+            if (
+              !hypotheticalCheck ||
+              (hypotheticalCheck && hypoBlockingMoves.includes(square.id))
+            ) {
+              square.classList.add(isOdd ? "capture-black" : "capture-white");
+              square.classList.remove(isOdd ? "black-to" : "white-to");
+            }
           }
         }
       }
     }
   });
 }
-
-export function handleBishopMove(squares, clickedPiece, availableSquares) {
+export function handleBishopMove(squares, clickedPiece, availableSquares, colorToMove, isCheck, blockingMoves, hypotheticalMoves) {
+  const isWhite = clickedPiece.color == 'white'
+  let isCheckColor = isWhite ? isCheck.white : isCheck.black
   allBishopMoves(squares, clickedPiece);
   filterBishopMoves(clickedPiece);
   let clickedFile = clickedPiece.file.charCodeAt(0);
@@ -89,6 +102,10 @@ export function handleBishopMove(squares, clickedPiece, availableSquares) {
   blocked.upRight = Math.min(...upRight);
   blocked.downLeft = Math.max(...downLeft);
   blocked.downRight = Math.max(...downRight);
+
+  if (blockingMoves.includes(clickedPiece.square)) {
+    return;
+  }
   squares.forEach((square) => {
     let splitId = square.id.split("");
     let file = splitId[0].charCodeAt(0);
@@ -96,15 +113,43 @@ export function handleBishopMove(squares, clickedPiece, availableSquares) {
     if (bishopMoves.includes(square.id)) {
       if (file > clickedFile) {
         if (row > blocked.downRight && clickedRow > row) {
-          availableSquares.push(square.id);
+          if(!isCheckColor || blockingMoves.includes(square.id)) {
+            if (
+              !hypotheticalCheck ||
+              (hypotheticalCheck && hypoBlockingMoves.includes(square.id))
+            ) {
+              availableSquares.push(square.id);
+            }         
+          }
         } else if (row < blocked.upRight && clickedRow < row) {
-          availableSquares.push(square.id);
+          if(!isCheckColor || blockingMoves.includes(square.id)) {
+            if (
+              !hypotheticalCheck ||
+              (hypotheticalCheck && hypoBlockingMoves.includes(square.id))
+            ) {
+              availableSquares.push(square.id);
+            }        
+          }
         }
       } else if (file < clickedFile) {
         if (row < blocked.upLeft && clickedRow < row) {
-          availableSquares.push(square.id);
+          if(!isCheckColor || blockingMoves.includes(square.id)) {
+            if (
+              !hypotheticalCheck ||
+              (hypotheticalCheck && hypoBlockingMoves.includes(square.id))
+            ) {
+              availableSquares.push(square.id);
+            }         
+          }
         } else if (row > blocked.downLeft && clickedRow > row) {
-          availableSquares.push(square.id);
+          if(!isCheckColor || blockingMoves.includes(square.id)) {
+            if (
+              !hypotheticalCheck ||
+              (hypotheticalCheck && hypoBlockingMoves.includes(square.id))
+            ) {
+              availableSquares.push(square.id);
+            }         
+          }        
         }
       }
     }

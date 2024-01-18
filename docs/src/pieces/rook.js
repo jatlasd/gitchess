@@ -1,4 +1,8 @@
 import { highlightAvailableSquares } from "../squareChanges/availableSquares.js";
+import {
+  hypotheticalCheck,
+  hypoBlockingMoves,
+} from "../boardState/hypotheticalCheck.js";
 
 let rookMoves = [];
 
@@ -65,8 +69,13 @@ function findRookCaptures(squares, clickedPiece, clickedFile, clickedRow) {
       if (square.dataset.occupied) {
         if (square.dataset.color !== clickedPiece.color) {
           if (newRow == blocked.up || newRow == blocked.down) {
-            square.classList.add(isOdd ? "capture-black" : "capture-white");
-            square.classList.remove(isOdd ? "black-to" : "white-to");
+            if (
+              !hypotheticalCheck ||
+              (hypotheticalCheck && hypoBlockingMoves.includes(square.id))
+            ) {
+              square.classList.add(isOdd ? "capture-black" : "capture-white");
+              square.classList.remove(isOdd ? "black-to" : "white-to");
+            }
           }
         }
       }
@@ -74,8 +83,13 @@ function findRookCaptures(squares, clickedPiece, clickedFile, clickedRow) {
       if (square.dataset.occupied) {
         if (square.dataset.color !== clickedPiece.color) {
           if (newFile == blocked.left || newFile == blocked.right) {
-            square.classList.add(isOdd ? "capture-black" : "capture-white");
-            square.classList.remove(isOdd ? "black-to" : "white-to");
+            if (
+              !hypotheticalCheck ||
+              (hypotheticalCheck && hypoBlockingMoves.includes(square.id))
+            ) {
+              square.classList.add(isOdd ? "capture-black" : "capture-white");
+              square.classList.remove(isOdd ? "black-to" : "white-to");
+            }
           }
         }
       }
@@ -83,7 +97,16 @@ function findRookCaptures(squares, clickedPiece, clickedFile, clickedRow) {
   });
 }
 
-export function handleRookMove(squares, clickedPiece, availableSquares) {
+export function handleRookMove(
+  squares,
+  clickedPiece,
+  availableSquares,
+  colorToMove,
+  isCheck,
+  blockingMoves
+) {
+  const isWhite = clickedPiece.color == "white";
+  let isCheckColor = isWhite ? isCheck.white : isCheck.black;
   allRookMoves(squares, clickedPiece);
   filterRookMoves(clickedPiece);
   blocked.up = Math.min(...movesUp);
@@ -94,21 +117,58 @@ export function handleRookMove(squares, clickedPiece, availableSquares) {
   let clickedFile = clickedPiece.file.charCodeAt(0);
   let clickedRow = parseInt(clickedPiece.row);
 
+  if (blockingMoves.includes(clickedPiece.square)) {
+    return;
+  }
+  blockingMoves.forEach((move) => {
+    if (document.getElementById(move).dataset.occupied) {
+      isCheckColor = false;
+    }
+  });
+
   squares.forEach((square) => {
     let splitId = square.id.split("");
     let newFile = splitId[0].charCodeAt(0);
     let newRow = parseInt(splitId[1]);
     if (newFile == clickedFile) {
       if (newRow < blocked.up && clickedRow < newRow) {
-        availableSquares.push(square.id);
+        if (!isCheckColor || blockingMoves.includes(square.id)) {
+          if (
+            !hypotheticalCheck ||
+            (hypotheticalCheck && hypoBlockingMoves.includes(square.id))
+          ) {
+            availableSquares.push(square.id);
+          }
+        }
       } else if (newRow > blocked.down && clickedRow > newRow) {
-        availableSquares.push(square.id);
+        if (!isCheckColor || blockingMoves.includes(square.id)) {
+          if (
+            !hypotheticalCheck ||
+            (hypotheticalCheck && hypoBlockingMoves.includes(square.id))
+          ) {
+            availableSquares.push(square.id);
+          }
+        }
       }
     } else if (newRow == clickedRow) {
       if (newFile > blocked.left && newFile < clickedFile) {
-        availableSquares.push(square.id);
+        if (!isCheckColor || blockingMoves.includes(square.id)) {
+          if (
+            !hypotheticalCheck ||
+            (hypotheticalCheck && hypoBlockingMoves.includes(square.id))
+          ) {
+            availableSquares.push(square.id);
+          }
+        }
       } else if (newFile < blocked.right && newFile > clickedFile) {
-        availableSquares.push(square.id);
+        if (!isCheckColor || blockingMoves.includes(square.id)) {
+          if (
+            !hypotheticalCheck ||
+            (hypotheticalCheck && hypoBlockingMoves.includes(square.id))
+          ) {
+            availableSquares.push(square.id);
+          }
+        }
       }
     }
   });

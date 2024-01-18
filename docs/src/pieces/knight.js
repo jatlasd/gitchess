@@ -1,4 +1,6 @@
+import { blockingMoves, isCheck } from "../boardState/check.js";
 import { highlightAvailableSquares } from "../squareChanges/availableSquares.js";
+import { hypotheticalCheck, hypoBlockingMoves } from "../boardState/hypotheticalCheck.js";
 
 
 let knightMoves
@@ -24,21 +26,67 @@ function allKnightMoves(squares, clickedPiece) {
   })
 }
 
-function findKnightCaptures(clickedPiece, availableSquares) {
+function findKnightCaptures(clickedPiece, availableSquares, isCheck, blockingMoves) {
+  let whiteIsCheck = isCheck.white == true
+  let blackIsCheck = isCheck.black == true
+  const isWhite = clickedPiece.color == 'white'
+
+  if (blockingMoves.includes(clickedPiece.square)) {
+    return;
+  }
+
+  blockingMoves.forEach(move => {
+    if (document.getElementById(move).dataset.occupied) {
+      if (isWhite) {
+        whiteIsCheck = false;
+      } else {
+        blackIsCheck = false;
+      }
+    }
+  });
+
+  if (blockingMoves.includes(clickedPiece.square)) {
+    return;
+  }
+
   for(const move of knightMoves) {
     let square = document.getElementById(move)
     const isOdd = square.dataset.squareColor == 'odd'
     if(!square.dataset.occupied) {
-      availableSquares.push(square.id)
+      if(isWhite) {
+        if(!whiteIsCheck || blockingMoves.includes(square.id)) {
+          if (
+            !hypotheticalCheck ||
+            (hypotheticalCheck && hypoBlockingMoves.includes(square.id))
+          ) {
+            availableSquares.push(square.id);
+          }        
+        }
+      } else {
+        if(!blackIsCheck || blockingMoves.includes(square.id)) {
+          if (
+            !hypotheticalCheck ||
+            (hypotheticalCheck && hypoBlockingMoves.includes(square.id))
+          ) {
+            availableSquares.push(square.id);
+          }
+        }
+      }
     } else if (square.dataset.color !== clickedPiece.color) {
-      square.classList.add(isOdd ? "capture-black" : "capture-white");
-      square.classList.remove(isOdd ? "black-to" : "white-to");
+      if (
+        !hypotheticalCheck ||
+        (hypotheticalCheck && hypoBlockingMoves.includes(square.id))
+      ) {
+        square.classList.add(isOdd ? "capture-black" : "capture-white");
+        square.classList.remove(isOdd ? "black-to" : "white-to");
+      }
     }
   }
 }
 
+
 export function handleKnightMove(squares, clickedPiece, availableSquares) {
   allKnightMoves(squares, clickedPiece)
-  findKnightCaptures(clickedPiece, availableSquares)
+  findKnightCaptures(clickedPiece, availableSquares, isCheck, blockingMoves)
   highlightAvailableSquares(availableSquares)
 }
