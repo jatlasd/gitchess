@@ -1,14 +1,17 @@
 import { populateBoard } from "./src/board/populateBoard.js";
-import { handlePawnMove, handlePawnPromotion } from "./src/pieces/pawn.js";
+import {
+  handlePawnMove,
+  handlePawnPromotion,
+  enPassant,
+} from "./src/pieces/pawn.js";
 import { handleRookMove } from "./src/pieces/rook.js";
 import { handleBishopMove } from "./src/pieces/bishop.js";
 import { handleKnightMove } from "./src/pieces/knight.js";
 import { handleKingMove, handleCastle } from "./src/pieces/king.js";
 import { handleQueenMove } from "./src/pieces/queen.js";
-import { updateAllMoves } from "./src/boardState/updateMoves.js"
-import { isCheck, blockingMoves} from './src/boardState/check.js'
+import { updateAllMoves } from "./src/boardState/updateMoves.js";
+import { isCheck, blockingMoves } from "./src/boardState/check.js";
 import { checkHypotheticalMove } from "./src/boardState/updateHypotheticalMoves.js";
-import { highlightAvailableSquares } from "./src/squareChanges/availableSquares.js";
 
 populateBoard();
 
@@ -16,7 +19,6 @@ populateBoard();
 
 To Do:
 
-- Add en passant
 - not allow king to move into check
 
 */
@@ -42,22 +44,22 @@ let allMoves = {
       epawn: [],
       fpawn: [],
       gpawn: [],
-      hpawn: []
+      hpawn: [],
     },
     knight: {
       bknight: [],
-      gknight: []
+      gknight: [],
     },
     bishop: {
       blackbishop: [],
-      whitebishop: []
+      whitebishop: [],
     },
     rook: {
       arook: [],
-      hrook: []
+      hrook: [],
     },
     queen: [],
-    king: []
+    king: [],
   },
   black: {
     pawn: {
@@ -68,24 +70,24 @@ let allMoves = {
       epawn: [],
       fpawn: [],
       gpawn: [],
-      hpawn: []
+      hpawn: [],
     },
     knight: {
       bknight: [],
-      gknight: []
+      gknight: [],
     },
     bishop: {
       blackbishop: [],
-      whitebishop: []
+      whitebishop: [],
     },
     rook: {
       arook: [],
-      hrook: []
+      hrook: [],
     },
     queen: [],
-    king: []
-  }
-}
+    king: [],
+  },
+};
 
 let hypotheticalMoves = {
   white: {
@@ -97,22 +99,22 @@ let hypotheticalMoves = {
       epawn: [],
       fpawn: [],
       gpawn: [],
-      hpawn: []
+      hpawn: [],
     },
     knight: {
       bknight: [],
-      gknight: []
+      gknight: [],
     },
     bishop: {
       blackbishop: [],
-      whitebishop: []
+      whitebishop: [],
     },
     rook: {
       arook: [],
-      hrook: []
+      hrook: [],
     },
     queen: [],
-    king: []
+    king: [],
   },
   black: {
     pawn: {
@@ -123,33 +125,32 @@ let hypotheticalMoves = {
       epawn: [],
       fpawn: [],
       gpawn: [],
-      hpawn: []
+      hpawn: [],
     },
     knight: {
       bknight: [],
-      gknight: []
+      gknight: [],
     },
     bishop: {
       blackbishop: [],
-      whitebishop: []
+      whitebishop: [],
     },
     rook: {
       arook: [],
-      hrook: []
+      hrook: [],
     },
     queen: [],
-    king: []
-  }
-}
+    king: [],
+  },
+};
 
-
-
-
+let round = 0;
+let isEnPassant = false;
 
 squares.forEach((square) => {
   square.addEventListener("click", () => {
-    updateAllMoves(squares, allMoves, colorToMove)
-    
+    updateAllMoves(squares, allMoves, colorToMove);
+
     let selectedSquare = square.id;
     if (square.dataset.color == colorToMove) {
       if (square.dataset.occupied) {
@@ -196,7 +197,8 @@ function assignClickedPiece(square) {
     row: parseInt(splitSquare[1]),
     hasMoved: square.dataset.hasMoved,
     isTo: square.dataset.isTo,
-    pieceIdentifier: square.dataset.pieceIdentifier
+    pieceIdentifier: square.dataset.pieceIdentifier,
+    moveCount: square.dataset.moveCount,
   };
 }
 
@@ -219,7 +221,7 @@ function removeHighlightAvailableSquares() {
 //!
 
 function handlePieceClick(e) {
-  checkHypotheticalMove(squares, hypotheticalMoves, colorToMove)
+  checkHypotheticalMove(squares, hypotheticalMoves, colorToMove);
 
   const square = e.target;
   const isOdd = square.classList.contains("odd");
@@ -227,17 +229,52 @@ function handlePieceClick(e) {
   moveSquares.push(square.id);
   switch (square.dataset.piece) {
     case "pawn":
-      return handlePawnMove(squares, clickedPiece, availableSquares, colorToMove, isCheck, blockingMoves);
+      return handlePawnMove(
+        squares,
+        clickedPiece,
+        availableSquares,
+        colorToMove,
+        isCheck,
+        blockingMoves,
+        round
+      );
     case "rook":
-      return handleRookMove(squares, clickedPiece, availableSquares, colorToMove, isCheck, blockingMoves);
+      return handleRookMove(
+        squares,
+        clickedPiece,
+        availableSquares,
+        colorToMove,
+        isCheck,
+        blockingMoves
+      );
     case "knight":
-      return handleKnightMove(squares, clickedPiece, availableSquares, isCheck, blockingMoves);
+      return handleKnightMove(
+        squares,
+        clickedPiece,
+        availableSquares,
+        isCheck,
+        blockingMoves
+      );
     case "bishop":
-      return handleBishopMove(squares, clickedPiece, availableSquares, colorToMove, isCheck, blockingMoves);
+      return handleBishopMove(
+        squares,
+        clickedPiece,
+        availableSquares,
+        colorToMove,
+        isCheck,
+        blockingMoves
+      );
     case "king":
       return handleKingMove(squares, clickedPiece, availableSquares, castle);
     case "queen":
-      return handleQueenMove(squares, clickedPiece, availableSquares, colorToMove, isCheck, blockingMoves);
+      return handleQueenMove(
+        squares,
+        clickedPiece,
+        availableSquares,
+        colorToMove,
+        isCheck,
+        blockingMoves
+      );
   }
 }
 // Universal Piece Movement
@@ -269,7 +306,6 @@ function handleClick(e, squares) {
     moveSquares = [];
     clickedPiece = {};
   }
-
 }
 
 function removeSelectedSquares() {
@@ -298,10 +334,34 @@ function removeMoveSquares() {
   });
 }
 
+function clearEnPassantPawn() {
+  let oldSquare = document.getElementById(enPassant.oldSquare);
+  const isOdd = oldSquare.classList.contains("odd");
+  oldSquare.classList.remove(clickedPiece.color, clickedPiece.piece);
+  oldSquare.dataset.numberOfMoves = "";
+  oldSquare.dataset.pieceIdentifier = "";
+  oldSquare.dataset.moveCount = "";
+  oldSquare.dataset.color = "";
+  oldSquare.dataset.piece = "";
+  oldSquare.dataset.occupied = "";
+  oldSquare.style.setProperty("background-image", "");
+  setMoveSquares();
+  oldSquare.classList.remove(isOdd ? "selected-black" : "selected-white");
+}
+
 function setNewSquare(square) {
+  updateAllMoves(squares, allMoves, colorToMove);
+  isEnPassant = false;
   showCapturedPiece(square);
+  if (colorToMove == "white") {
+    round++;
+  }
+  if (square.id == enPassant.newSquare) {
+    isEnPassant = true;
+  }
+  square.dataset.moveCount = round;
   square.classList.add(clickedPiece.color, clickedPiece.piece);
-  square.dataset.pieceIdentifier = clickedPiece.pieceIdentifier
+  square.dataset.pieceIdentifier = clickedPiece.pieceIdentifier;
   square.dataset.move = true;
   square.dataset.color = clickedPiece.color;
   square.dataset.piece = clickedPiece.piece;
@@ -311,8 +371,8 @@ function setNewSquare(square) {
     "background-image",
     `url(assets/${clickedPiece.color}-${clickedPiece.piece}.png)`
   );
-  if(square.dataset.piece == 'pawn') {
-    handlePawnPromotion(square, clickedPiece)
+  if (square.dataset.piece == "pawn") {
+    handlePawnPromotion(square, clickedPiece);
   }
 }
 
@@ -332,10 +392,15 @@ function showCapturedPiece(square) {
 }
 
 function clearOldSquare() {
+  if (isEnPassant) {
+    clearEnPassantPawn();
+  }
   let oldSquare = document.getElementById(moveSquares[0]);
   const isOdd = oldSquare.classList.contains("odd");
   oldSquare.classList.remove(clickedPiece.color, clickedPiece.piece);
-  oldSquare.dataset.pieceIdentifier = ''
+  oldSquare.dataset.numberOfMoves = "";
+  oldSquare.dataset.pieceIdentifier = "";
+  oldSquare.dataset.moveCount = "";
   oldSquare.dataset.move = true;
   oldSquare.dataset.color = "";
   oldSquare.dataset.piece = "";
@@ -345,8 +410,6 @@ function clearOldSquare() {
   oldSquare.classList.remove(isOdd ? "selected-black" : "selected-white");
 }
 
-// Individual Piece Movements and Captures
-
 function clearCaptureClass() {
   squares.forEach((square) => {
     const isBlack = square.classList.contains("capture-black");
@@ -355,6 +418,4 @@ function clearCaptureClass() {
   setMoveSquares();
 }
 
-
-
-export {clickedPiece}
+export { clickedPiece };

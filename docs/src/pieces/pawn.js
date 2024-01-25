@@ -5,6 +5,11 @@ import { hypotheticalCheck, hypoBlockingMoves } from "../boardState/hypothetical
 let pawnMoves;
 let blockedSquares;
 let blocked;
+let enPassant = {
+  newSquare: '',
+  oldSquare: ''
+}
+
 
 function allPawnMoves(squares, clickedPiece) {
   pawnMoves = [];
@@ -116,8 +121,42 @@ function setPiece(promoteSquare, select) {
   });
 }
 
+function handleEnPassant(squares, clickedPiece, colorToMove, round) {
+  enPassant = {
+    newSquare: '',
+    oldSquare: ''
+  }
+  const isWhite = colorToMove == 'white'
+  const clickedFile = clickedPiece.file.charCodeAt(0);
+  const clickedRow = clickedPiece.row;
+  squares.forEach(square => {
+    let split = square.id.split("");
+    let file = split[0].charCodeAt(0);
+    let row = parseInt(split[1]);
+    if(square.dataset.moveCount !== '') {
+      if(square.dataset.piece == 'pawn' && square.dataset.moveCount !== undefined && square.dataset.color !== clickedPiece.color) {
+        if(file == clickedFile+1 || file==clickedFile-1) {
+            if(!isWhite && (row == clickedRow && clickedRow == 4) && square.dataset.moveCount == round) {
+            enPassant.oldSquare = square.id
+            let newFile = String.fromCharCode(file)
+            let newRow = isWhite ? row + 1 : row - 1
+            let newSquare = newFile + newRow
+            enPassant.newSquare = newSquare
+        } else if (isWhite && (row == clickedRow && clickedRow == 5) && square.dataset.moveCount == round) {
+            enPassant.oldSquare = square.id
+            let newFile = String.fromCharCode(file)
+            let newRow = isWhite ? row + 1 : row - 1
+            let newSquare = newFile + newRow
+            enPassant.newSquare = newSquare      
+          }
+        }
+      }
+    }
+  })
+}
 
-export function handlePawnMove(squares, clickedPiece, availableSquares, colorToMove, isCheck, blockingMoves) {
+export function handlePawnMove(squares, clickedPiece, availableSquares, colorToMove, isCheck, blockingMoves, round) {
+  handleEnPassant(squares, clickedPiece, colorToMove, round)
   const isWhite = clickedPiece.color == "white";
   let isCheckColor = isWhite ? isCheck.white : isCheck.black;
   const clickedFile = clickedPiece.file.charCodeAt(0);
@@ -125,10 +164,6 @@ export function handlePawnMove(squares, clickedPiece, availableSquares, colorToM
   allPawnMoves(squares, clickedPiece);
   findPawnBlock(clickedPiece);
 
-  // If any of the moves in blockingMoves are occupied, set the corresponding isCheck to false
-  if (blockingMoves.includes(clickedPiece.square)) {
-    return;
-  }
   blockingMoves.forEach(move => {
     if (document.getElementById(move).dataset.occupied) {
       isCheckColor = false;
@@ -149,6 +184,9 @@ export function handlePawnMove(squares, clickedPiece, availableSquares, colorToM
               (hypotheticalCheck && hypoBlockingMoves.includes(square.id))
             ) {
               availableSquares.push(square.id);
+              if(enPassant.newSquare !== '') {
+                availableSquares.push(enPassant.newSquare)
+              }
             }
           }
         } else if (!isWhite && row >= blocked && row < clickedRow) {
@@ -158,6 +196,9 @@ export function handlePawnMove(squares, clickedPiece, availableSquares, colorToM
               (hypotheticalCheck && hypoBlockingMoves.includes(square.id))
             ) {
               availableSquares.push(square.id);
+              if(enPassant.newSquare !== '') {
+                availableSquares.push(enPassant.newSquare)
+              }
             }         
           }
         }
@@ -167,3 +208,5 @@ export function handlePawnMove(squares, clickedPiece, availableSquares, colorToM
   highlightAvailableSquares(availableSquares);
   findPawnCaptures(squares, clickedPiece);
 }
+
+export { enPassant }

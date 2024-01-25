@@ -67,10 +67,6 @@ function findAvailableBishoplikeMoves(
   let clickedFile = clickedPiece.file.charCodeAt(0);
   let clickedRow = clickedPiece.row;
 
-  if (blockingMoves.includes(clickedPiece.square)) {
-    return;
-  }
-
   blockingMoves.forEach(move => {
     if (document.getElementById(move).dataset.occupied) {
       isCheckColor = false;

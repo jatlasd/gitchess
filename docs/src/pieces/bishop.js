@@ -103,9 +103,6 @@ export function handleBishopMove(squares, clickedPiece, availableSquares, colorT
   blocked.downLeft = Math.max(...downLeft);
   blocked.downRight = Math.max(...downRight);
 
-  if (blockingMoves.includes(clickedPiece.square)) {
-    return;
-  }
   squares.forEach((square) => {
     let splitId = square.id.split("");
     let file = splitId[0].charCodeAt(0);
