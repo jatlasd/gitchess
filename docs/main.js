@@ -12,6 +12,11 @@ import { handleQueenMove } from "./src/pieces/queen.js";
 import { updateAllMoves } from "./src/boardState/updateMoves.js";
 import { isCheck, blockingMoves } from "./src/boardState/check.js";
 import { checkHypotheticalMove } from "./src/boardState/updateHypotheticalMoves.js";
+import {
+  setPosition,
+  getPosition,
+  getForwardPosition,
+} from "./src/boardState/positionHistory.js";
 
 populateBoard();
 
@@ -303,6 +308,7 @@ function handleClick(e, squares) {
     setNewSquare(square);
     clearOldSquare();
     removeHighlightAvailableSquares();
+    setPosition(squares);
     moveSquares = [];
     clickedPiece = {};
   }
@@ -417,5 +423,21 @@ function clearCaptureClass() {
   });
   setMoveSquares();
 }
+
+document.getElementById("back-history").addEventListener("click", function () {
+  let worked = getPosition();
+  if (worked) {
+    colorToMove = colorToMove == "white" ? "black" : "white";
+  }
+});
+
+document
+  .getElementById("forward-history")
+  .addEventListener("click", function () {
+    let worked = getForwardPosition();
+    if (worked) {
+      colorToMove = colorToMove == "white" ? "black" : "white";
+    }
+  });
 
 export { clickedPiece };
